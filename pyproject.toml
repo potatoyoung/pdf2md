@@ -1,0 +1,22 @@
+[project]
+name = "literature-preprocessor"
+version = "0.1.0"
+description = "Lightweight batch PDF to Markdown preprocessor for research papers."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "pymupdf4llm",
+]
+
+[project.scripts]
+convert-papers = "literature_preprocessor.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv]
+package = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/literature_preprocessor"]
