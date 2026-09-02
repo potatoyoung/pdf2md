@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 
@@ -12,4 +13,5 @@ from literature_preprocessor.cli import main
 
 
 if __name__ == "__main__":
+    os.chdir(PROJECT_ROOT)
     raise SystemExit(main())

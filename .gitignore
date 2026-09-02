@@ -6,12 +6,10 @@ logs/*
 !logs/.gitkeep
 *.log
 
-data/*
-!data/.gitkeep
-!data/pdf/
-!data/pdf/.gitkeep
-!data/markdown/
-!data/markdown/.gitkeep
+data/**
+!data/
+!data/**/
+!data/**/.gitkeep
 
 .idea/
 .pytest_cache/

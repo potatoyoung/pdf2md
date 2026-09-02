@@ -48,6 +48,8 @@ Windows PowerShell 中如需手动激活虚拟环境：
 uv run python scripts/convert_papers.py
 ```
 
+使用 `scripts/convert_papers.py` 时，相对路径会按项目根目录解析；即使当前目录在 `scripts/` 下，默认输入目录仍是项目根目录下的 `data/pdf/`。
+
 也可以使用安装后的命令行入口：
 
 ```bash
@@ -125,4 +127,3 @@ logs/conversion_report_*.csv
 - `pymupdf4llm` 或底层 PyMuPDF 无法解析某些复杂版式 PDF。
 
 当前版本只做稳定的 PDF 到 Markdown 批量转换，暂不包含 LLM API、RAG、向量数据库、Embedding、GUI、Web 服务或 Zotero API。
-
