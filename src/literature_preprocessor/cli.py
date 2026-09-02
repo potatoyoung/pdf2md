@@ -14,6 +14,36 @@ from literature_preprocessor.utils import ensure_directory, output_path_for_pdf,
 logger = logging.getLogger(__name__)
 
 
+def confirm(prompt: str) -> bool:
+    """Return True only when the user explicitly answers yes."""
+    try:
+        answer = input(f"{prompt} [y/N]: ")
+    except EOFError:
+        logger.warning("No input available; treating prompt as no: %s", prompt)
+        return False
+    return answer.strip().lower() in {"y", "yes"}
+
+
+def confirm_delete_pdf(pdf_path: Path) -> bool:
+    """Ask whether a converted PDF should be deleted."""
+    return confirm(f"Delete source PDF after conversion? {pdf_path}")
+
+
+def clear_markdown_files(output_dir: Path) -> int:
+    """Delete Markdown files under an output directory and return the count."""
+    deleted_count = 0
+    for markdown_path in sorted(output_dir.rglob("*.md")):
+        if not markdown_path.is_file():
+            continue
+        try:
+            markdown_path.unlink()
+            deleted_count += 1
+            logger.info("Deleted Markdown file: %s", markdown_path)
+        except OSError as exc:
+            logger.error("Failed to delete Markdown file: %s (%s)", markdown_path, exc)
+    return deleted_count
+
+
 def build_parser() -> argparse.ArgumentParser:
     """Build the command line parser."""
     parser = argparse.ArgumentParser(
@@ -73,6 +103,12 @@ def run_batch(
     logger.info("Overwrite existing Markdown: %s", overwrite)
     logger.info("Log file: %s", log_path)
 
+    if confirm(f"Clear existing Markdown files in {output_dir}?"):
+        deleted_count = clear_markdown_files(output_dir)
+        logger.info("Cleared %d Markdown file(s) from output directory", deleted_count)
+    else:
+        logger.info("Kept existing Markdown files in output directory")
+
     pdf_files = find_pdf_files(input_dir=input_dir, recursive=recursive)
     logger.info("Found %d PDF file(s)", len(pdf_files))
 
@@ -92,6 +128,14 @@ def run_batch(
             logger.info("Skipped existing output: %s", markdown_path)
         elif result.success:
             logger.info("Converted to: %s (%.3fs)", markdown_path, result.elapsed_seconds)
+            if confirm_delete_pdf(pdf_path):
+                try:
+                    pdf_path.unlink()
+                    logger.info("Deleted source PDF: %s", pdf_path)
+                except OSError as exc:
+                    logger.error("Failed to delete source PDF: %s (%s)", pdf_path, exc)
+            else:
+                logger.info("Kept source PDF: %s", pdf_path)
         else:
             logger.error("Failed: %s (%s)", pdf_path, result.error)
 
@@ -132,4 +176,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
