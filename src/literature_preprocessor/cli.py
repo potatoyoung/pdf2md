@@ -24,9 +24,11 @@ def confirm(prompt: str) -> bool:
     return answer.strip().lower() in {"y", "yes"}
 
 
-def confirm_delete_pdf(pdf_path: Path) -> bool:
-    """Ask whether a converted PDF should be deleted."""
-    return confirm(f"Delete source PDF after conversion? {pdf_path}")
+def confirm_delete_pdfs(pdf_paths: list[Path]) -> bool:
+    """Ask whether all successfully converted source PDFs should be deleted."""
+    return confirm(
+        f"Delete {len(pdf_paths)} successfully converted source PDF(s)?"
+    )
 
 
 def clear_markdown_files(output_dir: Path) -> int:
@@ -113,6 +115,7 @@ def run_batch(
     logger.info("Found %d PDF file(s)", len(pdf_files))
 
     results: list[ConversionResult] = []
+    converted_pdf_paths: list[Path] = []
     for index, pdf_path in enumerate(pdf_files, start=1):
         markdown_path = output_path_for_pdf(pdf_path, input_dir, output_dir)
         logger.info("[%d/%d] Converting: %s", index, len(pdf_files), pdf_path)
@@ -128,16 +131,21 @@ def run_batch(
             logger.info("Skipped existing output: %s", markdown_path)
         elif result.success:
             logger.info("Converted to: %s (%.3fs)", markdown_path, result.elapsed_seconds)
-            if confirm_delete_pdf(pdf_path):
+            converted_pdf_paths.append(pdf_path)
+        else:
+            logger.error("Failed: %s (%s)", pdf_path, result.error)
+
+    if converted_pdf_paths:
+        if confirm_delete_pdfs(converted_pdf_paths):
+            for pdf_path in converted_pdf_paths:
                 try:
                     pdf_path.unlink()
                     logger.info("Deleted source PDF: %s", pdf_path)
                 except OSError as exc:
                     logger.error("Failed to delete source PDF: %s (%s)", pdf_path, exc)
-            else:
-                logger.info("Kept source PDF: %s", pdf_path)
         else:
-            logger.error("Failed: %s (%s)", pdf_path, result.error)
+            for pdf_path in converted_pdf_paths:
+                logger.info("Kept source PDF: %s", pdf_path)
 
     write_csv_report(results, report_path)
 
